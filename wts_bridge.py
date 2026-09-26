@@ -1,8 +1,8 @@
-from wts_core import (
+from .wts_core import (
     holidays, public_queries, classrooms, academic, schedule,
     assignments, scoped_cache,
 )
-from wts_core.models import (
+from .wts_core.models import (
     ClassroomsRequest, ScheduleRequest, GradeRequest,
     AssignmentsRequest, CalendarRangeRequest,
 )
