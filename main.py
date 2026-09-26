@@ -101,7 +101,7 @@ class WTSPoly(FunctionTool[AstrAgentContext]):
 
 PLUGIN_NAME = "astrbot_plugin_BUPT_search"
 
-@register(f"{PLUGIN_NAME}", "xiewoc", "一个柏油信息的综合查询插件，支持AI自主查询", "1.0.0", "repo url")
+@register(f"{PLUGIN_NAME}", "xiewoc", "一个柏油信息的综合查询插件，支持AI自主查询", "1.0.0", "https://github.com/xiewoc/astrbot_plugin_BUPT_search")
 class astrbot_plugin_BUPT_search(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
