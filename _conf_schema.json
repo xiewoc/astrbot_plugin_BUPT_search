@@ -1,0 +1,32 @@
+{
+    "config_curri": {
+        "description": "课程设置",
+        "type": "object",
+        "items": {
+            "account": {
+                "description": "学工号",
+                "type": "string",
+                "hint": "将在查询课表和DDL时使用"
+            },
+            "password_jw": {
+                "description": "教务密码",
+                "type": "string"
+            },
+            "password_jxy": {
+                "description": "教学云密码",
+                "type": "string"
+            }
+        }
+    },
+    "config_byr": {
+        "description": "BYRdocs配置",
+        "type": "object",
+        "items": {
+            "rtn_limit": {
+                "description": "搜索最大返回数量",
+                "type": "int",
+                "default": 5
+            }
+        }
+    }
+}
