@@ -100,7 +100,7 @@ class WTSBridge:
     async def _assignment_scope_and_revision(self):
         """
         作业模块需要 scope + revision。
-        仅在账号发生变化时清除缓存，避免每次都清空导致缓存失效。
+        仅在账号或密码发生变化时清除缓存，避免每次都清空导致缓存失效。
         ★ 用锁保护，避免并发竞态。
         """
         async with self._assignment_lock:
