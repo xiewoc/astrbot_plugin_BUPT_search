@@ -96,7 +96,7 @@ class WTSPoly(FunctionTool[AstrAgentContext]):
         self, context: ContextWrapper[AstrAgentContext], **kwargs
     ) -> ToolExecResult:
         callable = (kwargs.get("callable") or "").strip()
-        ret = wts.str2callable(callable)
+        ret = await wts.str2callable(callable)
         return ret if ret else "no result"
 
 PLUGIN_NAME = "astrbot_plugin_BUPT_search"
@@ -127,7 +127,7 @@ class astrbot_plugin_BUPT_search(Star):
     @bupt.command("set")
     async def set(self, event: AstrMessageEvent, ac: str, ps_jw: str, ps_jxy: str):
         try:
-            wts.set_acpw(ac, ps_jw, ps_jxy)
+            await wts.set_acpw(ac, ps_jw, ps_jxy)
             yield event.plain_result("successfully set the account and passwords")
         except Exception as e:
             logger.error(e)
