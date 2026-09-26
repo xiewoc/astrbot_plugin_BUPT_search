@@ -1,9 +1,6 @@
-import inspect
-import asyncio
 import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0,str(Path(__file__).parent))
 
 from .wts_core import (
     holidays, public_queries, classrooms, academic, schedule,
@@ -16,7 +13,7 @@ from .wts_core.models import (
 from collections import defaultdict
 
 
-class WTSBridge:
+class WTSBridge():
 
     def __init__(self) -> None:
         self.ACCOUNT: str = ""
@@ -29,8 +26,6 @@ class WTSBridge:
 
         # 用于判断作业模块是否需要清缓存
         self._assignment_account: str | None = None
-        # ★ 新增：并发保护锁
-        self._assignment_lock = asyncio.Lock()
 
         self.schedule: dict = {
             "0": {"section": 1, "start_time": "8:00", "end_time": "8:45"},
@@ -51,11 +46,11 @@ class WTSBridge:
         self.week: dict = {
             "1": "Mon",
             "2": "Tue",
-            "3": "Wed",   # ★ 修复 Wen -> Wed
-            "4": "Thu",   # ★ 修复 Thr -> Thu
+            "3": "Wen",
+            "4": "Thr",
             "5": "Fri",
             "6": "Sat",
-            "7": "Sun",
+            "7": "Sun"
         }
         self.allowed_attr = {
             "set_acpw",
@@ -71,14 +66,9 @@ class WTSBridge:
         }
 
     def _slot2time(self, input: list) -> list:
-        # ★ 修复：slot 不存在时不再静默塞 None，而是报错，暴露调用方 bug
         opt = []
         for item in input:
-            key = str(item)
-            entry = self.schedule.get(key)
-            if entry is None:
-                raise ValueError(f"Unknown schedule slot: {item!r}")
-            opt.append(entry)
+            opt.append(self.schedule.get(str(item)))
         return opt
 
     def _num2week(self, num) -> str:
@@ -97,27 +87,23 @@ class WTSBridge:
             "message": str(e),
         }
 
-    async def _assignment_scope_and_revision(self):
+    def _assignment_scope_and_revision(self):
         """
         作业模块需要 scope + revision。
         仅在账号发生变化时清除缓存，避免每次都清空导致缓存失效。
-        ★ 用锁保护，避免并发竞态。
         """
-        async with self._assignment_lock:
-            if self._assignment_account != self.ACCOUNT:
-                assignments.clear_cache()
-                self._assignment_account = self.ACCOUNT
+        if self._assignment_account != self.ACCOUNT:
+            assignments.clear_cache()
+            self._assignment_account = self.ACCOUNT
         scope = scoped_cache.new_account_scope()
         revision = assignments.credential_revision()
         return scope, revision
 
     # ---------------- 帐密相关 ----------------
-    async def set_acpw(self, Account: str, Password_JW: str, Password_JXY: str):
+    def set_acpw(self, Account: str, Password_JW: str, Password_JXY: str):
         self.ACCOUNT = Account
         self.PSWD_JW = Password_JW
         self.PSWD_JXY = Password_JXY
-        # ★ 新增：账号或密码变化都强制下次清缓存
-        self._assignment_account = None
 
     # ---------------- 公共信息 ----------------
 
@@ -205,7 +191,7 @@ class WTSBridge:
             if snapshot.exam_schedule is not None:
                 opt["exams"] = {
                     "exam_schedule_status": snapshot.exam_schedule.status,
-                    "total_exam_count": len(snapshot.exam_schedule.items),  # ★ 修复 coumt -> count
+                    "total_exam_coumt": len(snapshot.exam_schedule.items),
                     "items": []
                 }
                 for exam in snapshot.exam_schedule.items:
@@ -220,7 +206,7 @@ class WTSBridge:
         try:
             terms = await academic.fetch_terms(self.ACCOUNT, self.PSWD_JW)
             return {
-                "current_term_id": terms.current_term_id,  # ★ 修复 curent -> current
+                "curent_term_id": terms.current_term_id,
                 "all_terms": [term.id for term in terms.terms],
             }
         except Exception as e:
@@ -266,7 +252,7 @@ class WTSBridge:
         date 格式: "YYYY-MM-DD"
         """
         try:
-            scope, revision = await self._assignment_scope_and_revision()
+            scope, revision = self._assignment_scope_and_revision()
             day = await assignments.fetch_assignments(
                 AssignmentsRequest(date=date),
                 self.ACCOUNT,
@@ -289,7 +275,7 @@ class WTSBridge:
         start_date / end_date 格式: "YYYY-MM-DD"
         """
         try:
-            scope, revision = await self._assignment_scope_and_revision()
+            scope, revision = self._assignment_scope_and_revision()
             month = await assignments.fetch_assignment_calendar(
                 CalendarRangeRequest(start_date=start_date, end_date=end_date),
                 self.ACCOUNT,
@@ -306,17 +292,9 @@ class WTSBridge:
         except Exception as e:
             return self._err(e)
 
-    # ---------------- 动态分发 ----------------
-
-    async def str2callable(self, string: str, **kwargs):
-        """
-        ★ 改造：同时支持同步方法和 async 方法。
-        仍然需要 await 本方法本身（因为本方法自身是 async）。
-        """
+    
+    def str2callable(self, string: str, **kwargs):
         if string not in self.allowed_attr:
             raise SyntaxError("Method Not Allowed")
         fn = getattr(self, string)
-        result = fn(**kwargs)
-        if inspect.isawaitable(result):
-            result = await result
-        return result
+        return fn(**kwargs)
