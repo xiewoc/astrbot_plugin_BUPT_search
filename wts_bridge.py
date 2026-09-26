@@ -1,8 +1,12 @@
-from wts_core import (
+import sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).parent))
+
+from .wts_core import (
     holidays, public_queries, classrooms, academic, schedule,
     assignments, scoped_cache,
 )
-from wts_core.models import (
+from .wts_core.models import (
     ClassroomsRequest, ScheduleRequest, GradeRequest,
     AssignmentsRequest, CalendarRangeRequest,
 )
